@@ -197,4 +197,21 @@ const configSchema = z.object({
   AGENT_INTEROP_SECRET: z.string().optional(),
 });
 
+if (process.env.DATABASE_URL) {
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    process.env.POSTGRES_HOST = url.hostname;
+    process.env.POSTGRES_PORT = url.port || "5432";
+    process.env.POSTGRES_USER = url.username;
+    process.env.POSTGRES_PASSWORD = url.password;
+    process.env.POSTGRES_DB = url.pathname.slice(1);
+  } catch (error) {
+    console.warn("Failed to parse DATABASE_URL:", error);
+  }
+}
+
+if (process.env.CLOUDAMQP_URL && !process.env.NUQ_RABBITMQ_URL) {
+  process.env.NUQ_RABBITMQ_URL = process.env.CLOUDAMQP_URL;
+}
+
 export const config = configSchema.parse(process.env);

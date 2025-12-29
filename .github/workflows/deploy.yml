@@ -1,0 +1,65 @@
+name: Deploy to Heroku
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Heroku Container Registry
+        run: coverage/heroku login
+
+      - name: Login to Heroku Container Registry (Docker)
+        run: echo "${{ secrets.HEROKU_API_KEY }}" | docker login --username=_ --password-stdin registry.heroku.com
+
+      - name: Build and Push API
+        env:
+          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME_API }}
+        working-directory: ./apps/api
+        run: |
+          docker build --target runtime -t registry.heroku.com/$HEROKU_APP_NAME/web .
+          docker push registry.heroku.com/$HEROKU_APP_NAME/web
+
+      - name: Release API
+        env:
+          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME_API }}
+        run: |
+          heroku container:release web --app $HEROKU_APP_NAME
+
+  deploy-playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Heroku Container Registry (Docker)
+        run: echo "${{ secrets.HEROKU_API_KEY }}" | docker login --username=_ --password-stdin registry.heroku.com
+      
+      # Install Heroku CLI for release step
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Build and Push Playwright Service
+        env:
+          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME_PLAYWRIGHT }}
+        working-directory: ./apps/playwright-service-ts
+        run: |
+          docker build -t registry.heroku.com/$HEROKU_APP_NAME/web .
+          docker push registry.heroku.com/$HEROKU_APP_NAME/web
+
+      - name: Release Playwright Service
+        env:
+          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME_PLAYWRIGHT }}
+        run: |
+          heroku container:release web --app $HEROKU_APP_NAME
