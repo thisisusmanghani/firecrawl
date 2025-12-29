@@ -205,7 +205,7 @@ jobs:
 
       - name: Publish test report
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Test Report (${{ matrix.engine }}, ${{ matrix.proxy }}, ${{ matrix.search }}, ${{ matrix.ai }})
           path: apps/api/test-results/junit.xml
