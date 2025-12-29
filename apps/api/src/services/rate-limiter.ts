@@ -4,9 +4,13 @@ import { RateLimiterMode } from "../types";
 import Redis from "ioredis";
 import type { AuthCreditUsageChunk } from "../controllers/v1/types";
 
-export const redisRateLimitClient = new Redis(config.REDIS_RATE_LIMIT_URL!, {
+const redisRateLimitOptions: any = {
   enableAutoPipelining: true,
-});
+};
+if (config.REDIS_RATE_LIMIT_URL!.startsWith("rediss://")) {
+  redisRateLimitOptions.tls = { rejectUnauthorized: false };
+}
+export const redisRateLimitClient = new Redis(config.REDIS_RATE_LIMIT_URL!, redisRateLimitOptions);
 
 const createRateLimiter = (keyPrefix, points) =>
   new RateLimiterRedis({

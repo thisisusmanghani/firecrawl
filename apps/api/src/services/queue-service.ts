@@ -15,9 +15,13 @@ let redisConnection: IORedis;
 
 export function getRedisConnection(): IORedis {
   if (!redisConnection) {
-    redisConnection = new IORedis(config.REDIS_URL!, {
+    const redisOptions: any = {
       maxRetriesPerRequest: null,
-    });
+    };
+    if (config.REDIS_URL!.startsWith("rediss://")) {
+      redisOptions.tls = { rejectUnauthorized: false };
+    }
+    redisConnection = new IORedis(config.REDIS_URL!, redisOptions);
     redisConnection.on("connect", () => logger.info("Redis connected"));
     redisConnection.on("reconnecting", () => logger.warn("Redis reconnecting"));
     redisConnection.on("error", err => logger.warn("Redis error", { err }));
