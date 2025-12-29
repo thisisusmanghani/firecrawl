@@ -206,14 +206,13 @@ if (process.env.DATABASE_URL) {
     process.env.POSTGRES_PASSWORD = url.password;
     process.env.POSTGRES_DB = url.pathname.slice(1);
 
-    // Ensure SSL is enabled for Heroku Postgres
-    if (!url.searchParams.has("sslmode") && !url.searchParams.has("ssl")) {
-      url.searchParams.set("ssl", "true");
-      // Note: node-postgres might need 'ssl={rejectUnauthorized:false}' which isn't easily passed via URL string for self-signed certs
-      // We often rely on PGSSLMODE=no-verify env var or similar if strict verification fails.
+    // Heroku Postgres uses self-signed SSL certs, so we need to disable strict verification
+    if (!url.searchParams.has("sslmode")) {
+      url.searchParams.set("sslmode", "no-verify");
     }
     process.env.NUQ_DATABASE_URL = url.toString();
     process.env.NUQ_DATABASE_URL_LISTEN = url.toString();
+    process.env.PGSSLMODE = "no-verify"; // Fallback for pg client
   } catch (error) {
     console.warn("Failed to parse DATABASE_URL:", error);
   }
